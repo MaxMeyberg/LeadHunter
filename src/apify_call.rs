@@ -35,7 +35,7 @@ struct ApifyAPI {
 
 impl ApifyAPI {
     // This is a contructor to neatly pack all the data from apify into an easier API call
-    fn new(api_key: String, actor_id: String, linkedin_url: &str) -> Self{
+    fn new() -> Self{
         
         dotenv().ok(); // load up .env file, same as "load_dotenv()" in python
         let api_key: String = std::env::var("APIFY_API_KEY").expect("Missing Apify API key, is it gone?"); // get api key from /.env, panic if no API key found
@@ -121,25 +121,18 @@ impl ApifyAPI {
 
 pub async fn run_actor(profile_url: &str) -> Result<serde_json::Value, Box<dyn error::Error>> {
 
-    dotenv().ok();
-    let api_key = std::env::var("APIFY_API_KEY").expect("Missing Apify API key");
-    let actor_id = "2SyF0bVxmgGr8IVCZ".to_string();
-    let apify_api = ApifyAPI::new(api_key.clone(), actor_id.clone(), profile_url);
 
+    // --TODO: Remove the fix test
+    // dotenv().ok();
+    // let api_key = std::env::var("APIFY_API_KEY").expect("Missing Apify API key");
+    // let actor_id = "2SyF0bVxmgGr8IVCZ".to_string();
+    // let apify_api = ApifyAPI::new(api_key.clone(), actor_id.clone(), profile_url);
+    let apify = ApifyAPI::new();
     // Make the API call to run the Actor (POST)
-    let run = apify_api.post_request(profile_url).await?;
+    let run = apify.post_request(profile_url).await?;
 
     // Retry mechanism to wait for the actor to finish
     let client = Client::new();
-
-
-    
-    // Stop building struct
-
-
-    // Make the API call to run the Actor (POST)
-
-   
 
     
     // Retry mechanism to wait for the actor to finish
@@ -153,10 +146,10 @@ pub async fn run_actor(profile_url: &str) -> Result<serde_json::Value, Box<dyn e
             tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
             //(GET)
             
-            let run_status_url = format!("https://api.apify.com/v2/acts/{}/runs/{}", actor_id, run["data"]["id"].as_str().unwrap());
+            let run_status_url = format!("https://api.apify.com/v2/acts/{}/runs/{}", apify.actor_id, run["data"]["id"].as_str().unwrap());
             let run_status_response = client
                 .get(&run_status_url)
-                .bearer_auth(api_key.clone())
+                .bearer_auth(apify.api_key.clone())
                 .send()
                 .await?;
 
@@ -180,7 +173,7 @@ pub async fn run_actor(profile_url: &str) -> Result<serde_json::Value, Box<dyn e
             let dataset_url = format!("https://api.apify.com/v2/datasets/{}/items", dataset_id);
             let dataset_response = client
                 .get(&dataset_url)
-                .bearer_auth(api_key)
+                .bearer_auth(apify.api_key)
                 .send()
                 .await?;
 
