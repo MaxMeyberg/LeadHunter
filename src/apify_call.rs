@@ -22,14 +22,14 @@ item = next(client.dataset(run["defaultDatasetId"]).iterate_items())
 */
 
 use reqwest::Client; //Rust library needed to have rust send HTTP requests
+use axum::{routing::post, Json, Router}; //Rust library needed to have rust receive HTTP requests
 use serde_json::{json, Value}; // Allows "let url = json!({"profileUrls": [linkedin_url]});" to work
 use dotenv::dotenv;
 use std::{env, error};
 
-
 struct ApifyAPI {
     api_key: String, 
-    actor_id: String,
+    actor_id: String, // What web scraper we are using, the Actor ID we haveis for linkedin, This means we can use this for Instagram, tikto, etc and do little changes :D
     api_url: String, // URL for apify API
 }
 
@@ -106,27 +106,39 @@ impl ApifyAPI {
             */
             return Err("Failed to run the Actor".into());
         }
-        // Confirms we can move on to run rest of program
+       
 
 
         // Parse the JSON Response from API call, Apify should confirm that they got our stuff
-        let confirmed: serde_json::Value = response.json().await?;
+        let json_receipt: serde_json::Value = response.json().await?;
+        /*
+        Since we return:
 
-        Ok(confirmed)
+        enum Result<T, E> {
+            Ok(T),  // Represents a successful result containing a value of type `T`
+            Err(E), // Represents an error result containing a value of type `E`
+        }
+
+        We need the Ok() to be
+        */
+        Ok(json_receipt)
 
     }
+
+    /* TODO: Impliment this
+    async fn get_request(&self) -> Result<serde_json::Value, Box<dyn error::Error>>{
+        println!("WE called the function but we did nothing");
+        
+    }
+    */
+    
 
     
 }
 
 pub async fn run_actor(profile_url: &str) -> Result<serde_json::Value, Box<dyn error::Error>> {
 
-
-    // --TODO: Remove the fix test
-    // dotenv().ok();
-    // let api_key = std::env::var("APIFY_API_KEY").expect("Missing Apify API key");
-    // let actor_id = "2SyF0bVxmgGr8IVCZ".to_string();
-    // let apify_api = ApifyAPI::new(api_key.clone(), actor_id.clone(), profile_url);
+    // Create Apify struct for API
     let apify = ApifyAPI::new();
     // Make the API call to run the Actor (POST)
     let run = apify.post_request(profile_url).await?;
