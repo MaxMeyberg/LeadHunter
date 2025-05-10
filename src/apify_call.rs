@@ -26,7 +26,7 @@ use axum::{routing::post, Json, Router}; //Rust library needed to have rust rece
 use serde_json::{json, Value}; // Allows "let url = json!({"profileUrls": [linkedin_url]});" to work
 use dotenv::dotenv;
 use std::{env, error};
-
+use colored::Colorize; // colors in print statements :)
 struct ApifyAPI {
     api_key: String, 
     actor_id: String, // What web scraper we are using, the Actor ID we haveis for linkedin, This means we can use this for Instagram, tikto, etc and do little changes :D
@@ -106,12 +106,10 @@ impl ApifyAPI {
             */
             return Err("Failed to run the Actor".into());
         }
-       
-
 
         // Parse the JSON Response from API call, Apify should confirm that they got our stuff
         let json_receipt: serde_json::Value = response.json().await?;
-        /*
+        /* Need help understanding? 👉 Click me! 🖱️
         Since we return:
 
         enum Result<T, E> {
@@ -125,7 +123,7 @@ impl ApifyAPI {
 
     }
 
-    /* TODO: Impliment this
+    /* TODO: Impliment this get request
     async fn get_request(&self) -> Result<serde_json::Value, Box<dyn error::Error>>{
         println!("WE called the function but we did nothing");
         
@@ -138,6 +136,11 @@ impl ApifyAPI {
 
 pub async fn run_actor(profile_url: &str) -> Result<serde_json::Value, Box<dyn error::Error>> {
 
+    let mut x = vec![1,2,3];
+    let y  = &mut x;
+    y[0] = 5;
+    println!("{:?}", x);
+
     // Create Apify struct for API
     let apify = ApifyAPI::new();
     // Make the API call to run the Actor (POST)
@@ -145,8 +148,8 @@ pub async fn run_actor(profile_url: &str) -> Result<serde_json::Value, Box<dyn e
 
     // Retry mechanism to wait for the actor to finish
     let client = Client::new();
-
     
+
     // Retry mechanism to wait for the actor to finish
     let mut retries = 10;
     let mut run_status = run.clone();
