@@ -31,6 +31,7 @@ use std::sync::Arc;
 
 struct ApifyAPI {
     api_key: String, 
+    actor_id: String,
     api_url: String, // URL for apify API
 }
 
@@ -43,7 +44,7 @@ impl ApifyAPI {
         let actor_id: String = "2SyF0bVxmgGr8IVCZ".to_string(); // change actor_id to change web scraper we use
         let api_url: String = format!("https://api.apify.com/v2/acts/{}/runs", actor_id);
         
-        ApifyAPI { api_key, api_url,} // return the default
+        ApifyAPI { api_key, actor_id, api_url,} // return the default
     }
 
 /* 
@@ -97,17 +98,9 @@ impl ApifyAPI {
     async fn post_request(&self, linkedin_url: &str) -> Result<serde_json::Value> {
         // Initialize the HTTP client
         let client = Client::new();
-        // URL: https://2d20-24-4-242-200.ngrok-free.app/webhook
-        //let webhook_url = start_ngrok_server().await?;
-        
-        let webhook_url = "https://live-heartily-ferret.ngrok-free.app/webhook";
-        let json_url = json!({
-            "profileUrls": [linkedin_url],
-            "webhooks": [{
-                "eventTypes": ["ACTOR.RUN.SUCCEEDED"], // ✅ triggers on actor success
-                "requestUrl": webhook_url // ✅ sends result to our Axum webhook
-            }]
-        });
+        //DONT modify "profileUrls": or else the Apify API wont work
+
+        let json_url: Value = json!({"profileUrls": [linkedin_url]});
 
         /* ❓ Need help understanding? 👉 Click me! 🖱️
 
@@ -150,8 +143,8 @@ impl ApifyAPI {
             TLDR, shorthand for cleaner code :D
         */
         let response = client
-            .post(&self.api_url)
-            .bearer_auth(&self.api_key)
+            /*Http Post Request*/.post(&self.api_url) 
+            /*Http Post Request*/.bearer_auth(&self.api_key)
             .json(&json_url)
             .send()
             .await
@@ -184,80 +177,78 @@ pub async fn run_actor(profile_url: &str) -> Result<serde_json::Value> {
 
     // Make the API call to run the Actor (POST)
     let run = apify.post_request(profile_url).await?;
-    Ok(run)
-}
-    // used for debugging
+    //TODO Add in manual polling
+
+
+    // Retry mechanism to wait for the actor to finish
+    let client = Client::new();
     
 
-//     // Retry mechanism to wait for the actor to finish
-//     let client = Client::new();
-    
+    // Retry mechanism to wait for the actor to finish
+    let mut retries = 10;
+    let mut run_status = run.clone();
 
-//     // Retry mechanism to wait for the actor to finish
-//     let mut retries = 10;
-//     let mut run_status = run.clone();
-
-//     while retries > 0 {
-//         if run_status["data"]["finishedAt"].as_str().is_some() {
-//             break;
-//         } else {
-//             tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
-//             //(GET)
+    while retries > 0 {
+        if run_status["data"]["finishedAt"].as_str().is_some() {
+            break;
+        } else {
+            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+            //(GET)
             
-//             let run_status_url = format!("https://api.apify.com/v2/acts/{}/runs/{}", apify.actor_id, run["data"]["id"].as_str().unwrap());
-//             let run_status_response = client
-//                 .get(&run_status_url)
-//                 .bearer_auth(apify.api_key.clone())
-//                 .send()
-//                 .await?;
+            let run_status_url = format!("https://api.apify.com/v2/acts/{}/runs/{}", apify.actor_id, run["data"]["id"].as_str().unwrap());
+            let run_status_response = client
+                .get(&run_status_url)
+                .bearer_auth(apify.api_key.clone())
+                .send()
+                .await?;
 
-//             if run_status_response.status().is_success() {
-//                 run_status = run_status_response.json().await?;
-//             } else {
-//                 return Err("Failed to fetch run status".into());
-//             }
-//         }
+            if run_status_response.status().is_success() {
+                run_status = run_status_response.json().await?;
+            } else {
+                return Err(anyhow::anyhow!("Failed to fetch run status"));
+            }
+        }
 
-//         retries -= 1;
-//     }
+        retries -= 1;
+    }
 
-//     if retries == 0 {
-//         return Err("Actor did not finish in time".into());
-//     }
+    if retries == 0 {
+        return Err(anyhow::anyhow!("Actor did not finish in time"));
+    }
 
-//     // Use match instead of if-else for handling dataset_id
-//     match run["data"].get("defaultDatasetId").and_then(|v| v.as_str()) {
-//         Some(dataset_id) => {
-//             let dataset_url = format!("https://api.apify.com/v2/datasets/{}/items", dataset_id);
-//             let dataset_response = client
-//                 .get(&dataset_url)
-//                 .bearer_auth(apify.api_key)
-//                 .send()
-//                 .await?;
+    // Use match instead of if-else for handling dataset_id
+    match run["data"].get("defaultDatasetId").and_then(|v| v.as_str()) {
+        Some(dataset_id) => {
+            let dataset_url = format!("https://api.apify.com/v2/datasets/{}/items", dataset_id);
+            let dataset_response = client
+                .get(&dataset_url)
+                .bearer_auth(&apify.api_key)
+                .send()
+                .await?;
 
-//             if dataset_response.status().is_success() {
-//                 let items: Vec<serde_json::Value> = dataset_response.json().await?;
-//                 if let Some(first_item) = items.into_iter().next() {
-//                     let full_name = first_item.get("fullName").and_then(|v| v.as_str()).unwrap_or("").to_string();
-//                     let headline = first_item.get("headline").and_then(|v| v.as_str()).unwrap_or("").to_string();
-//                     let email = first_item.get("email").and_then(|v| v.as_str()).unwrap_or("").to_string();
-//                     let about = first_item.get("about").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            if dataset_response.status().is_success() {
+                let items: Vec<serde_json::Value> = dataset_response.json().await?;
+                if let Some(first_item) = items.into_iter().next() {
+                    let full_name = first_item.get("fullName").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let headline = first_item.get("headline").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let email = first_item.get("email").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let about = first_item.get("about").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
-//                     let result = json!({
-//                         "fullName": full_name,
-//                         "headline": headline,
-//                         "email": email,
-//                         "about": about
-//                     });
+                    let result = json!({
+                        "fullName": full_name,
+                        "headline": headline,
+                        "email": email,
+                        "about": about
+                    });
 
-//                     return Ok(result);
-//                 } else {
-//                     return Err("Dataset is empty".into());
-//                 }
-//             } else {
-//                 return Err("Failed to fetch dataset".into());
-//             }
-//         }
-//         None => return Err("Dataset ID not found".into()),
-//     }
-// }
+                    return Ok(result);
+                } else {
+                    return Err(anyhow::anyhow!("Dataset is empty"));
+                }
+            } else {
+                return Err(anyhow::anyhow!("Failed to fetch dataset"));
+            }
+        }
+        None => return Err(anyhow::anyhow!("Dataset ID not found")),
+    }
+}
