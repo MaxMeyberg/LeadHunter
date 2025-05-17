@@ -25,9 +25,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
 
     Ok(())
     */
-    let _json = apify_call::run_actor(&linkedin_url).await?;
+    let apify_data = apify_call::run_actor(&linkedin_url).await?;
     
-    println!("JSON: {}", serde_json::to_string_pretty(&_json)?);
+    println!("JSON: {}", serde_json::to_string_pretty(&apify_data)?);
     //let test = "mailto:contact@company.com?subject=Job%20Application&body=Hello%2C%0A%0AI%20saw%20your%20job%20posting%20and%20would%20like%20to%20apply.".to_string();
     Ok(())
 
