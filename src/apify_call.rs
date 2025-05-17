@@ -47,39 +47,6 @@ impl ApifyAPI {
         ApifyAPI { api_key, actor_id, api_url,} // return the default
     }
 
-/* 
-    async fn post_request(&self, linkedin_url: &str) -> Result<serde_json::Value> {
-        // Initialize the HTTP client
-        let client = Client::new();
-        
-        // Get or create a webhook URL (uncomment when you have ngrok server setup)
-        // let webhook_url = start_ngrok_server().await?;
-        let webhook_url = "YOUR_WEBHOOK_URL"; // Replace with your actual webhook URL
-        
-        // Create payload with webhook configuration
-        let json_payload = json!({
-            "profileUrls": [linkedin_url],
-            "webhooks": [{
-                "eventTypes": ["ACTOR.RUN.SUCCEEDED"], 
-                "requestUrl": webhook_url
-            }]
-        });
-        
-        let response = client
-            .post(&self.api_url)
-            .bearer_auth(&self.api_key)
-            .json(&json_payload)
-            .send()
-            .await
-            .context("Failed to run the Actor")?;
-        
-        // Parse the JSON Response
-        let json_receipt: serde_json::Value = response.json().await?;
-        
-        println!("{}", "post_request sent with webhook, waiting for callback".green());
-        Ok(json_receipt)
-    }
-*/
     /* ❓ Need help understanding? 👉 Click me! 🖱️
     Let's break down:
     Result<serde_json::Value, Box<dyn Error>>
@@ -217,36 +184,29 @@ pub async fn run_actor(profile_url: &str) -> Result<serde_json::Value> {
     }
 
     // Use match instead of if-else for handling dataset_id
-    match run["data"].get("defaultDatasetId").and_then(|v| v.as_str()) {
+    match run["data"]
+    .get("defaultDatasetId")
+    .and_then(|v| v.as_str())
+    {
         Some(dataset_id) => {
-            let dataset_url = format!("https://api.apify.com/v2/datasets/{}/items", dataset_id);
-            let dataset_response = client
+            let dataset_url =
+                format!("https://api.apify.com/v2/datasets/{}/items", dataset_id);
+            let resp = client
                 .get(&dataset_url)
                 .bearer_auth(&apify.api_key)
                 .send()
                 .await?;
-
-            if dataset_response.status().is_success() {
-                let items: Vec<serde_json::Value> = dataset_response.json().await?;
-                if let Some(first_item) = items.into_iter().next() {
-                    let full_name = first_item.get("fullName").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    let headline = first_item.get("headline").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    let email = first_item.get("email").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    let about = first_item.get("about").and_then(|v| v.as_str()).unwrap_or("").to_string();
-
-                    let result = json!({
-                        "fullName": full_name,
-                        "headline": headline,
-                        "email": email,
-                        "about": about
-                    });
-
-                    return Ok(result);
-                } else {
-                    return Err(anyhow::anyhow!("Dataset is empty"));
-                }
+            resp.error_for_status_ref()
+                .context("Failed to fetch dataset")?;
+            
+            // Parse into a Vec<Value>
+            let items: Vec<serde_json::Value> = resp.json().await?;
+            
+            // Return the *raw* first item (no field extraction)
+            if let Some(first) = items.into_iter().next() {
+                return Ok(first);
             } else {
-                return Err(anyhow::anyhow!("Failed to fetch dataset"));
+                return Err(anyhow::anyhow!("Dataset is empty"));
             }
         }
         None => return Err(anyhow::anyhow!("Dataset ID not found")),
