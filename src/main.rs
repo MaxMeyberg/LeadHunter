@@ -16,14 +16,12 @@ use serde::{Deserialize, Serialize};
 use std::net::SocketAddr;
 use tower_http::cors::{CorsLayer, AllowOrigin, AllowMethods, AllowHeaders};
 
-// Define the request payload structure
 #[derive(Deserialize)]
 struct ApiRequest {
     linkedin_url: String,
     user_prompt: String,
 }
 
-// Define the response payload structure (optional, can also return plain text)
 #[derive(Serialize)]
 struct ApiResponse {
     generated_email: String,
@@ -34,7 +32,6 @@ async fn generate_email_handler(Json(payload): Json<ApiRequest>) -> impl IntoRes
     let linkedin_url = payload.linkedin_url;
     let user_api_prompt = payload.user_prompt;
 
-    // Validate LinkedIn URL (basic check)
     if !linkedin_url.starts_with("https://www.linkedin.com/in/") {
         return (StatusCode::BAD_REQUEST, Json(serde_json::json!({
             "error": "Invalid LinkedIn URL format. It should start with https://www.linkedin.com/in/"
@@ -62,7 +59,7 @@ async fn process_request(linkedin_url: &str, user_api_prompt: &str) -> Result<(S
     let info = from_value(&apify_data)
         .context("Failed to parse Apify data")?;
     
-    let profile_email = info.email.clone(); // Extract email before moving info
+    let profile_email = info.email.clone();
 
     let system_prompt_content = fs::read_to_string(Path::new("system_prompt.txt"))
         .await
@@ -82,10 +79,8 @@ async fn process_request(linkedin_url: &str, user_api_prompt: &str) -> Result<(S
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Load .env file if you are using environment variables for API keys
     dotenv::dotenv().ok();
 
-    // Define a permissive CORS layer
     let linkedin_origin = "https://www.linkedin.com".parse::<HeaderValue>()
         .expect("Invalid LinkedIn origin URL for CORS");
 
@@ -95,19 +90,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             Method::GET,
             Method::POST,
             Method::OPTIONS,
-        ])) // Allow GET, POST, OPTIONS requests
+        ]))
         .allow_headers(AllowHeaders::list([
             CONTENT_TYPE,
-            AUTHORIZATION, // If your extension sends authorization headers
-        ])) // Allow specific headers
-        .allow_credentials(true); // Allow credentials
+            AUTHORIZATION,
+        ]))
+        .allow_credentials(true);
 
-    // Build our application with a route and the CORS layer
     let app = Router::new()
         .route("/generate-email", post(generate_email_handler))
         .layer(cors);
-
-    // Run our application
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("Preparing to listen on {}", addr);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
