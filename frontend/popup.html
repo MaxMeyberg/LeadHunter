@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Tailor</title>
+  <script defer src="popup.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      width: 420px;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-400 to-purple-400 p-6 font-sans">
+  <div class="bg-white/90 backdrop-filter backdrop-blur-lg p-6 rounded-2xl shadow-2xl border border-white/20">
+    <div class="flex items-center mb-6">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-500 mr-3" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M2.003 5.884L10 2.5l7.997 3.384A1 1 0 0019 6.118V15.5a1 1 0 01-1 1h-2.5a.5.5 0 00-.5.5v1.5a.5.5 0 00.5.5H17a1 1 0 011-1V6.118a2 2 0 00-2.003-1.928l-7.997-3.384a2 2 0 00-1.994 0L2.003 4.19A2 2 0 001 6.118V15.5a1 1 0 001 1h2.5a.5.5 0 01.5.5v1.5a.5.5 0 01-.5.5H3a1 1 0 01-1-1V6.118a1 1 0 01.003-.234zM12 10a2 2 0 100-4 2 2 0 000 4zm-2 4a2 2 0 100-4 2 2 0 000 4zM6 10a2 2 0 100-4 2 2 0 000 4zm2 4a2 2 0 100-4 2 2 0 000 4z"/>
+      </svg>
+      <h1 class="text-3xl font-extrabold text-gray-800">LeadHunter Tailor</h1>
+    </div>
+    
+    <label for="context" class="block text-sm font-medium text-gray-700 mb-1">Personal Notes/Context</label>
+    <textarea id="context" rows="3" placeholder="e.g., Met at a conference..." class="w-full p-3 border border-gray-300 rounded-lg shadow-inner focus:ring-indigo-500 focus:border-indigo-500 mb-4 text-sm resize-none"></textarea>
+    
+    <div class="flex justify-center mb-4">
+      <button id="generate" class="inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-semibold py-3 px-6 rounded-full shadow-lg transition transform duration-150">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16..." clip-rule="evenodd"/>
+        </svg>
+        <span>Generate Email</span>
+      </button>
+    </div>
+
+    <div id="loading" class="text-center my-3 text-gray-600 text-sm hidden">
+      <svg class="animate-spin h-5 w-5 inline-block mr-2 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.37..."></path>
+      </svg>
+      Generating your tailored email...
+    </div>
+    
+    <div id="output-area" class="hidden mt-4">
+      <label for="output" class="block text-sm font-medium text-gray-700 mb-1">Generated Email</label>
+      <textarea id="output" rows="8" readonly class="w-full p-3 border border-gray-300 rounded-lg shadow-inner bg-gray-50 text-sm resize-none"></textarea>
+      <div class="mt-4 flex justify-end space-x-2">
+        <button id="copy" class="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-full shadow transition">
+          <span>Copy</span>
+        </button>
+        <button id="send" class="flex items-center space-x-2 bg-pink-500 hover:bg-pink-600 text-white font-semibold py-2 px-4 rounded-full shadow transition">
+          <span>Send</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
