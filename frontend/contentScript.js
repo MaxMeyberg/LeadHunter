@@ -180,7 +180,12 @@ function createEmailTailorModal() {
             } else {
                 const data = await apiResponse.json();
                 if (data.generated_email) {
-                    outputAreaInModal.value = data.generated_email;
+                    // If we have an email address, prepend the "To" field
+                    let emailContent = data.generated_email;
+                    if (data.email_address) {
+                        emailContent = `To: ${data.email_address}\n\n${emailContent}`;
+                    }
+                    outputAreaInModal.value = emailContent;
                 } else if (data.error) {
                     outputAreaInModal.value = `Error: ${data.error}`;
                 } else {
@@ -226,7 +231,7 @@ function createEmailTailorModal() {
         }
         // Simple subject, could be made configurable or smarter
         const subject = encodeURIComponent('Following up from LinkedIn'); 
-        window.location.href = `mailto:?subject=${subject}&body=${body}&to=${profile_email}`;
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
     });
 
     // Add the quantum CSS
