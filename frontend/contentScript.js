@@ -114,12 +114,34 @@ function createEmailTailorModal() {
 
     const hideModal = () => {
         modalOverlay.classList.remove('show');
-        // Optional: Set display to none after transition to remove from layout
-        // setTimeout(() => modalOverlay.style.display = 'none', 400); 
+        // Remove the modal from DOM after the transition completes
+        setTimeout(() => {
+            if (modalOverlay && modalOverlay.parentNode) {
+                modalOverlay.parentNode.removeChild(modalOverlay);
+            }
+            // Clean up event listeners
+            closeBtnTop.removeEventListener('click', hideModal);
+            closeBtnBottom.removeEventListener('click', hideModal);
+        }, 300); // Match this with your CSS transition duration
     };
 
+    // Add event listeners for closing the modal
     closeBtnTop.addEventListener('click', hideModal);
     closeBtnBottom.addEventListener('click', hideModal);
+    
+    // Close when clicking outside the modal content
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            hideModal();
+        }
+    });
+    
+    // Close with Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            hideModal();
+        }
+    });
 
     // Event listener for the modal's Generate button
     generateBtnInModal.addEventListener('click', async () => {
