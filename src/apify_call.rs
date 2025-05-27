@@ -36,7 +36,7 @@ struct ApifyAPI {
 }
 
 impl ApifyAPI {
-    // This is a contructor to neatly pack all the data from apify into an easier API call
+    /// This is a contructor to neatly pack all the data from apify into an easier API call
     fn new() -> Self{
         
         dotenv().ok(); // load up .env file, same as "load_dotenv()" in python
@@ -136,7 +136,7 @@ impl ApifyAPI {
     }
     
 }
-
+///Testing here for docs
 pub async fn run_actor(profile_url: &str) -> Result<serde_json::Value> {
 
     // Create a new Arc, which creates a new ApifyAPI struct

@@ -28,15 +28,11 @@ pub struct ProfileInfo {
 }
 
 impl ProfileInfo {
+
     /// Format the profile info into a JSON snippet for LLM prompts.
-    pub fn to_prompt(&self) -> String {
+    pub fn json_to_string(&self) -> String {
         // Serialize to pretty JSON, or fallback to empty object on error
         serde_json::to_string_pretty(self).unwrap_or_else(|_| "{}".to_string())
     }
 }
 
-/// Parse a JSON `Value` (e.g. your LinkedIn scraper output) into `ProfileInfo`
-pub fn from_value(v: &Value) -> Result<ProfileInfo> {
-    serde_json::from_value(v.clone())
-        .context("Failed to deserialize ProfileInfo from Value")
-}

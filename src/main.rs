@@ -1,10 +1,9 @@
 mod apify_call;
-mod llama;
 mod parse_json;
+mod gpt;
 use anyhow::{Result, Context};
 use std::path::Path;
 use tokio::fs;
-use parse_json::from_value;
 
 
 #[tokio::main]
@@ -34,20 +33,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
     let apify_data = apify_call::run_actor(&linkedin_url).await?;
     
     println!("JSON: {}", serde_json::to_string_pretty(&apify_data)?);
-    let info = from_value(&apify_data)?;
-    println!("\n→ ProfileInfo: {:#?}", info);
-
-    
-    let system = fs::read_to_string(Path::new("system_prompt.txt"))
+    let json_str = apify_data.to_string();
+    println!("\n→ ProfileInfo: {:#?}", json_str);
+    // get the system prompt from .txt file
+    let system_prompt = fs::read_to_string(Path::new("system_prompt.txt"))
         .await
         .context("Failed to read system prompt file")?;
-    let user = format!(
-        "{}\n\n\
-        Write only the cold email using the above template.",
-        info.to_prompt()
-    );
-    let email = llama::generate_from_llama(&system, &user).await?;
-    println!("\n=== GENERATED EMAIL ===\n{}", email);
+
+
+
+
+
+    // From here: llama and parsing
+    let gpt_response = gpt::generate_from_gpt(&system_prompt, &json_str).await?;
+
+    
+    println!("\n=== GENERATED EMAIL ===\n{}", gpt_response.to_string());
 
     //let test = "mailto:contact@company.com?subject=Job%20Application&body=Hello%2C%0A%0AI%20saw%20your%20job%20posting%20and%20would%20like%20to%20apply.".to_string();
     Ok(())
