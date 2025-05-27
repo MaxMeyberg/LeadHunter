@@ -1,6 +1,6 @@
 mod apify_call;
-mod parse_json;
 mod gpt;
+mod extractor;
 use anyhow::{Result, Context};
 use std::path::Path;
 use tokio::fs;
@@ -11,7 +11,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
 
    
     // TODO: Change this url to a user input
-    let linkedin_url = "https://www.linkedin.com/in/williamhgates/".to_string();
+    let linkedin_url = "https://www.linkedin.com/in/jmartling/".to_string();
     // TODO: Check to see if url is valid
 
 
@@ -40,11 +40,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
         .await
         .context("Failed to read system prompt file")?;
 
+    // FINI
 
-
-
-
-    // From here: llama and parsing
     let gpt_response = gpt::generate_from_gpt(&system_prompt, &json_str).await?;
 
     
